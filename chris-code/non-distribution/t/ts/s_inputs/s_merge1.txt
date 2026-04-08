@@ -1,0 +1,5 @@
+caress | 4 | https://example.com/page1
+caress pie | 2 | https://example.com/page1
+fli | 3 | https://example.com/page1
+di | 1 | https://example.com/page1
+di red | 1 | https://example.com/page1

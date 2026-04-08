@@ -1,0 +1,9 @@
+caress | https://example.com/page1 4 https://example.com/page2 2
+caress pie | https://example.com/page1 2
+di | https://example.com/page1 1
+di red | https://example.com/page1 1
+fli | https://example.com/page1 3
+humbl | https://example.com/page2 1
+meet | https://example.com/page2 3
+size | https://example.com/page2 2
+state | https://example.com/page2 2

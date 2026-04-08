@@ -1,0 +1,2 @@
+di | https://example.com/page1 1
+di red | https://example.com/page1 1

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #4CAF50;
+        }
+
+        a {
+            color: #5D4037;
+            text-decoration: none;
+            font-size: 1.2em;
+        }
+
+        a:hover {
+            color: #FF5722;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding: 10px;
+            background-color: #3F51B5;
+            color: white;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Explore More Topics</h2>
+        <p>Discover <a href="level_3a/index.html">Exciting Projects</a> that enhance your skills.</p>
+        <p>Learn about <a href="level_3b/index.html">Advanced Techniques</a> in programming.</p>
+        <p>Join our <a href="level_3c/index.html">Community Forum</a> for discussions and support.</p>
+        <p>Check out our <a href="level_3d/index.html">Resource Library</a> for tutorials and guides.</p>
+    </div>
+</body>
+</html>
