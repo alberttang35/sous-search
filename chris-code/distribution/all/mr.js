@@ -6,26 +6,32 @@
  */
 
 /**
- * Map functions used for mapreduce
+ * Map functions used for mapreduce (may return a Promise for async work).
  * @callback Mapper
  * @param {string} key
  * @param {any} value
- * @returns {object[]}
+ * @returns {object[]|Promise<object[]>}
  */
 
 /**
- * Reduce functions used for mapreduce
+ * Reduce functions used for mapreduce (may return a Promise).
  * @callback Reducer
  * @param {string} key
  * @param {any[]} value
- * @returns {object}
+ * @returns {object|Promise<object|undefined|null>}
  */
 
 /**
  * @typedef {Object} MRConfig
  * @property {Mapper} map
  * @property {Reducer} reduce
- * @property {string[]} keys
+ * @property {string[]} [keys]
+ * @property {string} [inputGid] When set, each node reads map inputs from this **local store gid**
+ *   (seed keys with `distribution.all.store.put(value, { key, gid: inputGid })` so URLs shard like the
+ *   distributed store). When omitted, map reads from the MR group gid (same as `config.gid` on the mr
+ *   service, usually `all`).
+ * @property {string} [jobId] Stable id for this job; hashed to derive the ephemeral `${mrID}_map` /
+ *   `${mrID}_reduce` gids and the `mr*` service name. Use a unique value per concurrent exec.
  *
  * @typedef {Object} Mr
  * @property {(configuration: MRConfig, callback: Callback) => void} exec
@@ -54,8 +60,13 @@ function mr(config) {
    */
   function exec(configuration, callback) {
     const id = globalThis.distribution.util.id;
-    const mrID = id.getID(JSON.stringify(configuration) + Date.now());
+    const mrID = configuration.jobId != null ?
+      id.getID(String(configuration.jobId)) :
+      id.getID(JSON.stringify(configuration) + Date.now());
     const mrGid = `mr${mrID.slice(0, 10)}`;
+    const mapInputGid = configuration.inputGid != null ?
+      configuration.inputGid :
+      context.gid;
 
     /*
       MapReduce steps:
@@ -71,14 +82,14 @@ function mr(config) {
       mapper: configuration.map,
       reducer: configuration.reduce,
       map: function(
-          /** @type {string} */ mrGid,
+          /** @type {string} */ mapInputGidParam,
           /** @type {string} */ mrID,
           /** @type {Callback} */ callback,
       ) {
-        // Map should read the node's local keys under the mrGid gid and write to store under gid `${mrID}_map`.
+        // Map reads each node's local keys under mapInputGidParam and writes to `${mrID}_map`.
         // Expected output: array of objects with a single key per object.
         // return callback(new Error('mr.map not implemented'));
-        globalThis.distribution.local.store.get({key: null, gid: mrGid}, (e, keys) => {
+        globalThis.distribution.local.store.get({key: null, gid: mapInputGidParam}, (e, keys) => {
           if (e || !keys || !keys.length) return callback(null, null);
 
           let done = 0;
@@ -86,18 +97,32 @@ function mr(config) {
             if (++done === keys.length) callback(null, null);
           };
 
+          /**
+           * @param {any} raw
+           */
+          const writeMapOut = (srcKey, raw) => {
+            const arr = Array.isArray(raw) ? raw : (raw ? [raw] : []);
+            if (!arr.length) return finish();
+
+            globalThis.distribution.local.store.put(
+                arr, {key: srcKey, gid: `${mrID}_map`}, () => finish(),
+            );
+          };
+
           keys.forEach((srcKey) => {
-            globalThis.distribution.local.store.get({key: srcKey, gid: mrGid}, (e, value) => {
+            globalThis.distribution.local.store.get({key: srcKey, gid: mapInputGidParam}, (e, value) => {
               if (e || value === undefined) return finish();
 
-              const raw = this.mapper(srcKey, value);
-              const arr = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-              if (!arr.length) return finish();
-
-              // write the map output to the local store under a new gid for the shuffle phase to read
-              globalThis.distribution.local.store.put(
-                  arr, {key: srcKey, gid: `${mrID}_map`}, () => finish(),
-              );
+              try {
+                const rawOrPromise = this.mapper(srcKey, value);
+                if (rawOrPromise != null && typeof rawOrPromise.then === 'function') {
+                  rawOrPromise.then((raw) => writeMapOut(srcKey, raw)).catch(() => finish());
+                } else {
+                  writeMapOut(srcKey, rawOrPromise);
+                }
+              } catch (_err) {
+                finish();
+              }
             });
           });
         });
@@ -171,11 +196,30 @@ function mr(config) {
 
           keys.forEach((k) => {
             globalThis.distribution.local.store.get({key: k, gid: `${mrID}_reduce`}, (e, values) => {
-              if (!e && values !== undefined) {
-                const result = this.reducer(k, values);
-                if (result !== undefined && result !== null) results.push(result);
+              const finishOne = () => {
+                if (++done === keys.length) callback(null, results);
+              };
+
+              if (e || values === undefined) return finishOne();
+
+              try {
+                const resultOrPromise = this.reducer(k, values);
+                if (resultOrPromise != null && typeof resultOrPromise.then === 'function') {
+                  resultOrPromise
+                      .then((result) => {
+                        if (result !== undefined && result !== null) results.push(result);
+                        finishOne();
+                      })
+                      .catch(() => finishOne());
+                } else {
+                  if (resultOrPromise !== undefined && resultOrPromise !== null) {
+                    results.push(resultOrPromise);
+                  }
+                  finishOne();
+                }
+              } catch (_err) {
+                finishOne();
               }
-              if (++done === keys.length) callback(null, results);
             });
           });
         });
@@ -200,7 +244,7 @@ function mr(config) {
     globalThis.distribution[context.gid].routes.put(mrService, mrGid, () => {
       // each node maps its local data
       globalThis.distribution[context.gid].comm.send(
-          [context.gid, mrID],
+          [mapInputGid, mrID],
           {service: mrGid, method: 'map'},
           () => {
             // each node routes its map outputs by key hash
