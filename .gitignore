@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Local persistence from distribution / crawl runs
+chris-code/store/
+
+# macOS
+.DS_Store
+
+# Stray lockfile at repo root (no package.json here)
+/package-lock.json

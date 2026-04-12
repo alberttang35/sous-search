@@ -1,0 +1,14 @@
+{
+  "name": "chris-code-crawl",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Distributed crawl utilities (used with chris-code/distribution).",
+  "scripts": {
+    "crawl-demo": "node crawl/run-crawl-demo.js"
+  },
+  "dependencies": {
+    "html-to-text": "^9.0.5",
+    "jsdom": "^23.2.0",
+    "yargs": "^17.7.2"
+  }
+}
