@@ -4,6 +4,8 @@ cd "$(dirname "$0")" || exit 1
 
 while read -r url; do
 
+echo "[engine] processing $url">/dev/stderr
+
   if [[ "$url" == "stop" ]]; then
     # stop the engine if it sees the string "stop" 
     exit;

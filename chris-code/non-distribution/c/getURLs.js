@@ -37,11 +37,15 @@ rl.on('close', () => {
   //  - select all anchor (`<a>`) elements) with an `href` attribute using `querySelectorAll`.
   //  - extract the value of the `href` attribute for each anchor element.
   const anchorElements = document.querySelectorAll('a[href]');
+  // const anchorElements = document.querySelectorAll('div[data-id]');
   // 5. Print each absolute URL to the console, one per line.
   for (const anchorElement of anchorElements) {
     const href = anchorElement.getAttribute('href');
     const absoluteURL = new URL(href, baseURL).href;
-    console.log(absoluteURL);
+    // console.log(absoluteURL);
+    // Normalize URL by removing query parameters and fragments
+    const normalizedURL = absoluteURL.split(/[?#]/)[0];
+    console.log(normalizedURL);
   }
 });
 
