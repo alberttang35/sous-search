@@ -4,11 +4,15 @@
   "version": "1.0.0",
   "description": "Distributed crawl utilities (used with chris-code/distribution).",
   "scripts": {
-    "crawl-demo": "node crawl/run-crawl-demo.js"
+    "crawl-demo": "node crawl/run-crawl-demo.js",
+    "indexing-check": "node -e \"require('./crawl/indexing')\"",
+    "index-to-db": "node crawl/indexing/run-index-to-db.js",
+    "verify-db": "node crawl/indexing/verify-db.js"
   },
   "dependencies": {
     "html-to-text": "^9.0.5",
     "jsdom": "^23.2.0",
+    "pg": "^8.20.0",
     "yargs": "^17.7.2"
   }
 }

@@ -9,3 +9,6 @@ chris-code/store/
 
 # Stray lockfile at repo root (no package.json here)
 /package-lock.json
+
+.env
+.env.*

@@ -1,0 +1,25 @@
+Hi Christopher and Albert! 
+
+Here is some feedback on your initial M6 poster draft:
+
+1. What domain to crawl? 
+As your poster mentioned, I think it would be tricky to crawl NYT cooking directly since they have a subscription system. food.com seems like it doesn't have this issue, that could be an alternative. You can also crawl from multiple sites to collect a more diverse dataset if 1 site ends up not having enough data (llms suggested AllRecipes, Serious Eats, Budget Bytes - I haven't actually checked if these are easily scrapable / have the info you guys are interested in, just some ideas).
+
+2. What data to collect from the scraped sites?
+I like the idea of querying based on ingredients or cooking time, I think it's novel! Ideally, the pages you guys scrape would have a common structure that makes it easy to extract ingredient information, but this probably won't be the case, especially if you use multiple sites, as mentioned above. To convert unstructured website data into a structured database, I know one group last year fed scraped text into a very small llm as part of their indexer. For example, you could prompt the llm to read the text and extract a list of ingredients. There might also be other approaches that fit better (and are more reliable than llms) for your project.
+
+3. What types of user queries?
+Will the queries be purely structured (e.g. show all recipes < 25min, show all recipes including chicken)? This could be useful - for example sometimes I just have a bunch of random ingredients and I could just select those ingredients as my query and get some recipes. However, algorithms like TF-IDF might not be that useful here, and you would need to think about how to structure your stored data (would it just be more like a SQL database?)
+
+If you guys have any specific questions, please reach out, I'd be happy to discuss!
+
+Best,
+Andrew
+
+Indexing subsystem: This subsystem is responsible for creating appropriate data structures for answering queries efficiently. It takes as input information from the crawling subsystem and creates inverted indices, information-retrieval metrics, and other ranking features as necessary. Examples of such features include TF/IDF metrics, page-rank weights, page metadata, and other proximity metrics. Its execution should be fully distributed, spreading indexing load across several peers using M5’s distributed execution engine—possibly augmented and tailored to these workloads—and storing the resulting data structures in M4’s sharded and load-balanced distributed storage subsystem. If possible, the storage subsystem should be optimized for read-heavy workloads to accelerate lookups by the search engine — so the index data should be structured appropriately to facilitate efficient searches.
+
+
+One approach for this part of the project is to write several small MapReduce programs that will execute independently on the distributed execution and storage subsystems. Such small programs are easier to specify and debug, challenges that become pronounced in a distributed setting. Running link analysis on production is somewhat challenging, partly due to the dynamic information of the web graph—at every point in time you have crawled only a subgraph, so you are soon to discover more edges. And executing MapReduce iteratively requires also thinking about how to have a completed job fire up the next iteration. The indexing engine can leverage additional information in pages—e.g., header information, semantic amplifiers—and support multi-gram phrase search.
+
+
+Query and retrieval subsystem: This subsystem is responsible for receiving a query from a client and responding with a list of pages ordered by relevance: it provides a search form, for inserting text, and returns an ordered list of results. This component can be web-based and/or command-line-based, and should also be used to perform a series of end-to-end system tests (see the evaluation section of your report.) It can additionally provide debug information about how a certain order was calculated. For example, each result can include some information about how the various factors—word frequencies, document frequencies, PageRank, n-grams, and other features—contribute to the result.  
