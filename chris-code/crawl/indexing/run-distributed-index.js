@@ -2,20 +2,14 @@
 // @ts-check
 'use strict';
 
-const {GID_DOCS} = require('../gids.js');
-const {mrExecPromise} = require('../storeUtil.js');
 const {
-  createIndexBuildMapper,
-  createIndexBuildReducer,
-  createIndexStatsMapper,
-  createIndexStatsReducer,
   closePostgresIfOpen,
 } = require('./mrIndexRound.js');
-const {GID_INDEX_DOCMETA} = require('./indexGids.js');
 const {
   bootstrapDistributionRuntime,
   stopDistributionRuntime,
 } = require('../distributedRuntime.js');
+const {runDistributedIndexJobs} = require('./distributedIndexPipeline.js');
 
 function parseArgs() {
   const out = {
@@ -60,49 +54,30 @@ Env:
   return out;
 }
 
-/**
- * @param {string} key
- * @param {Array<Record<string, any>>} rows
- * @returns {number}
- */
-function countByType(key, rows) {
-  return rows.filter((x) => x && x.type === key).length;
-}
-
 async function main() {
   const opts = parseArgs();
   await bootstrapDistributionRuntime({port: opts.port, gid: opts.gid});
 
-  const buildJobId = `${opts.jobPrefix}_build_${Date.now()}`;
-  const buildResults = await mrExecPromise({
-    map: createIndexBuildMapper({
-      withFallback: opts.withFallback,
-      writePostgres: opts.withPostgresSink,
-    }),
-    reduce: createIndexBuildReducer(),
-    inputGid: GID_DOCS,
-    jobId: buildJobId,
-  });
-  console.log('Build MR completed.', {
-    postingsKeys: countByType('postings', buildResults),
-    docMetaKeys: countByType('docmeta', buildResults),
-    attrKeys: countByType('attr', buildResults),
-    postgresWrites: countByType('postgres', buildResults),
-    totalResultRows: buildResults.length,
+  const out = await runDistributedIndexJobs({
+    jobPrefix: opts.jobPrefix,
+    withFallback: opts.withFallback,
+    skipStats: opts.skipStats,
+    writePostgres: opts.withPostgresSink,
   });
 
-  if (!opts.skipStats) {
-    const statsJobId = `${opts.jobPrefix}_stats_${Date.now()}`;
-    const statsResults = await mrExecPromise({
-      map: createIndexStatsMapper(),
-      reduce: createIndexStatsReducer(),
-      inputGid: GID_INDEX_DOCMETA,
-      jobId: statsJobId,
-    });
+  console.log('Build MR completed.', {
+    postingsKeys: out.build.postingsKeys,
+    docMetaKeys: out.build.docMetaKeys,
+    attrKeys: out.build.attrKeys,
+    postgresWrites: out.build.postgresWrites,
+    totalResultRows: out.build.totalResultRows,
+  });
+
+  if (out.stats) {
     console.log('Stats MR completed.', {
-      statRows: statsResults.filter((x) => x && x.type === 'stat').length,
-      dfRows: statsResults.filter((x) => x && x.type === 'df').length,
-      totalResultRows: statsResults.length,
+      statRows: out.stats.statRows,
+      dfRows: out.stats.dfRows,
+      totalResultRows: out.stats.totalResultRows,
     });
   }
 

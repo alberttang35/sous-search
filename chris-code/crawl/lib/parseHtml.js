@@ -1,8 +1,8 @@
 // @ts-check
-const {JSDOM} = require('jsdom');
-const {extractAnchorUrls} = require('./links.js');
-const {isFoodComRecipeUrl} = require('./food.js');
-const {extractLdJsonUrls} = require('./ldJsonItemList.js');
+const { JSDOM } = require("jsdom");
+const { extractAnchorUrls } = require("./links.js");
+const { extractLdJsonUrls } = require("./ldJsonItemList.js");
+const { getRecipeUrlPolicy } = require("./recipeUrlPolicy.js");
 
 /**
  * @param {string} html
@@ -10,23 +10,24 @@ const {extractLdJsonUrls} = require('./ldJsonItemList.js');
  * @returns {import('jsdom').JSDOM}
  */
 function parseHtml(html, pageUrl) {
-  return new JSDOM(html, {url: pageUrl});
+  return new JSDOM(html, { url: pageUrl });
 }
 
 /**
- * Unique Food.com /recipe/ URLs from a parsed page.
- * JSON-LD ItemList URLs (e.g. Food.com hub) are merged first, then anchor hrefs.
+ * Unique recipe detail URLs: JSON-LD ItemList / ListItem first, then anchor hrefs.
  * @param {import('jsdom').JSDOM} dom
  * @param {string} baseUrl
+ * @param {import('./recipeUrlPolicy.js').RecipeUrlPolicy} policy
  * @param {number} [maxLinks]
  * @returns {string[]}
  */
-function extractFoodRecipeLinks(dom, baseUrl, maxLinks = 200) {
+function extractFrontierLinks(dom, baseUrl, policy, maxLinks = 200) {
   const doc = dom.window.document;
   const seen = new Set();
   const out = [];
+  const { isRecipeDetailUrl } = policy;
   const tryAdd = (/** @type {string} */ u) => {
-    if (!isFoodComRecipeUrl(u) || seen.has(u)) return;
+    if (!isRecipeDetailUrl(u) || seen.has(u)) return;
     seen.add(u);
     out.push(u);
   };
@@ -42,4 +43,15 @@ function extractFoodRecipeLinks(dom, baseUrl, maxLinks = 200) {
   return out;
 }
 
-module.exports = {parseHtml, extractFoodRecipeLinks};
+/**
+ * @deprecated Use extractFrontierLinks with getRecipeUrlPolicy('food_only').
+ * @param {import('jsdom').JSDOM} dom
+ * @param {string} baseUrl
+ * @param {number} [maxLinks]
+ * @returns {string[]}
+ */
+function extractFoodRecipeLinks(dom, baseUrl, maxLinks = 200) {
+  return extractFrontierLinks(dom, baseUrl, getRecipeUrlPolicy("food_only"), maxLinks);
+}
+
+module.exports = { parseHtml, extractFrontierLinks, extractFoodRecipeLinks };

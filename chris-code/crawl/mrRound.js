@@ -6,7 +6,8 @@
  * require this module on every node so those globals exist).
  */
 const { fetchPage } = require("./lib/fetchPage.js");
-const { parseHtml, extractFoodRecipeLinks } = require("./lib/parseHtml.js");
+const { parseHtml, extractFrontierLinks } = require("./lib/parseHtml.js");
+const { getRecipeUrlPolicy } = require("./lib/recipeUrlPolicy.js");
 const { extractCrawlDoc } = require("./lib/recipeExtract.js");
 const { localStorePutPromise, allStorePutPromise, allStoreGetPromise } = require("./storeUtil.js");
 const { GID_VISITED, GID_DOCS } = require("./gids.js");
@@ -19,7 +20,7 @@ const { GID_VISITED, GID_DOCS } = require("./gids.js");
 
 /**
  * @typedef {Object} CrawlMrOpts
- * @property {{ maxDepth?: number, maxOutlinks?: number, fetchOptions?: import('./lib/fetchPage.js').FetchPageOptions }} [map]
+ * @property {{ maxDepth?: number, maxOutlinks?: number, fetchOptions?: import('./lib/fetchPage.js').FetchPageOptions, recipePolicyPreset?: import('./lib/recipeUrlPolicy.js').RecipePolicyPreset }} [map]
  * @property {{ nextFrontierGid?: string, maxDepth?: number }} [reduce]
  */
 
@@ -63,6 +64,7 @@ async function runMapFromGlobal(urlKey, rawMeta) {
   const maxDepth = opts.maxDepth ?? 8;
   const maxOutlinks = opts.maxOutlinks ?? 150;
   const fetchOptions = opts.fetchOptions || {};
+  const recipePolicy = getRecipeUrlPolicy(opts.recipePolicyPreset || "multisite");
 
   /** @type {FrontierMeta} */
   const meta =
@@ -89,7 +91,7 @@ async function runMapFromGlobal(urlKey, rawMeta) {
   await localStorePutPromise(doc, { key: urlKey, gid: GID_DOCS });
 
   const dom = parseHtml(fetched.html, pageUrl);
-  const links = extractFoodRecipeLinks(dom, pageUrl, maxOutlinks);
+  const links = extractFrontierLinks(dom, pageUrl, recipePolicy, maxOutlinks);
   const nextDepth = depth + 1;
   const out = [];
   const seen = new Set();
@@ -135,12 +137,14 @@ globalThis.__sousCrawlMrRunReduce = runReduceFromGlobal;
  * @param {number} opts.maxDepth
  * @param {number} opts.maxOutlinks
  * @param {import('./lib/fetchPage.js').FetchPageOptions} [opts.fetchOptions]
+ * @param {import('./lib/recipeUrlPolicy.js').RecipePolicyPreset} [opts.recipePolicyPreset]
  */
 function createCrawlMapper(opts) {
   getMrOpts().map = {
     maxDepth: opts.maxDepth,
     maxOutlinks: opts.maxOutlinks,
     fetchOptions: opts.fetchOptions || {},
+    recipePolicyPreset: opts.recipePolicyPreset || "multisite",
   };
   return async function crawlMapThin(urlKey, rawMeta) {
     return globalThis.__sousCrawlMrRunMap(urlKey, rawMeta);

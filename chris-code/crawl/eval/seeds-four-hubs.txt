@@ -1,0 +1,5 @@
+# One URL per line for multisite recipe crawl (listing/hub pages are fine as BFS seeds).
+https://www.food.com/recipe/
+https://www.allrecipes.com/recipes/
+https://www.seriouseats.com/recipes
+https://www.budgetbytes.com/category/recipes/

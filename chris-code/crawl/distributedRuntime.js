@@ -36,7 +36,7 @@ function startNodeServer() {
  * @returns {Promise<void>}
  */
 async function bootstrapDistributionRuntime(opts) {
-  const ip = opts.ip || '127.0.0.1';
+  const ip = opts.ip || process.env.BIND_IP || '127.0.0.1';
   const gid = opts.gid || 'all';
   globalThis.distribution = {
     util: utilMod,

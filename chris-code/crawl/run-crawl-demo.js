@@ -14,7 +14,20 @@
 
 'use strict';
 
+const fs = require('fs');
 const utilMod = require('../distribution/util/util.js');
+
+/**
+ * @param {string} filePath
+ * @returns {string[]}
+ */
+function readSeedsFile(filePath) {
+  const text = fs.readFileSync(filePath, 'utf8');
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0 && !l.startsWith('#'));
+}
 
 /** Default: Food.com recipe hub (200 OK); use --seed for a specific recipe page. */
 const DEFAULT_SEED = 'https://www.food.com/recipe/';
@@ -22,16 +35,21 @@ const DEFAULT_SEED = 'https://www.food.com/recipe/';
 function parseArgs() {
   const out = {
     seed: DEFAULT_SEED,
+    seedsFile: /** @type {string | null} */ (null),
     port: parseInt(process.env.CRAWL_DEMO_PORT || '17779', 10),
     maxRounds: 2,
     maxPagesBudget: 10,
     maxDepth: 3,
     sampleDocs: 5,
+    docStats: false,
+    recipePolicyPreset: /** @type {'multisite' | 'food_only'} */ ('multisite'),
   };
   for (let i = 2; i < process.argv.length; i++) {
     const a = process.argv[i];
     if (a === '--seed' && process.argv[i + 1]) {
       out.seed = process.argv[++i];
+    } else if (a === '--seeds-file' && process.argv[i + 1]) {
+      out.seedsFile = process.argv[++i];
     } else if (a === '--port' && process.argv[i + 1]) {
       out.port = parseInt(process.argv[++i], 10);
     } else if (a === '--max-rounds' && process.argv[i + 1]) {
@@ -42,15 +60,23 @@ function parseArgs() {
       out.maxDepth = parseInt(process.argv[++i], 10);
     } else if (a === '--sample-docs' && process.argv[i + 1]) {
       out.sampleDocs = parseInt(process.argv[++i], 10);
+    } else if (a === '--doc-stats') {
+      out.docStats = true;
+    } else if (a === '--recipe-policy' && process.argv[i + 1]) {
+      const v = process.argv[++i];
+      if (v === 'food_only' || v === 'multisite') out.recipePolicyPreset = v;
     } else if (a === '--help' || a === '-h') {
       console.log(`Usage: node crawl/run-crawl-demo.js [options]
 
-  --seed <url>          Starting URL (use a https://www.food.com/recipe/... page)
+  --seed <url>          Starting URL (ignored if --seeds-file is set)
+  --seeds-file <path>   One URL per line (e.g. from crawl-sitemap-seeds)
   --port <n>            HTTP port (default 17779, or env CRAWL_DEMO_PORT)
   --max-rounds <n>      MR frontier rounds (default 2)
   --max-pages <n>       Stop after this many visited URLs (default 10)
   --max-depth <n>       Max BFS depth from seed (default 3)
   --sample-docs <n>     Print up to N crawl_docs from local.store (default 5)
+  --doc-stats           After crawl, count docs with JSON-LD ingredients or times
+  --recipe-policy <p>   multisite (default) | food_only
 
 Run from the chris-code/ directory so ../distribution resolves correctly.
 `);
@@ -164,7 +190,16 @@ async function main() {
   console.log(
       `Node listening on http://${globalThis.distribution.node.config.ip}:${opts.port}`,
   );
-  console.log('Seed URL:', opts.seed);
+  const seeds = opts.seedsFile ? readSeedsFile(opts.seedsFile) : [opts.seed];
+  if (!seeds.length) {
+    console.error('No seeds: provide --seed or a non-empty --seeds-file');
+    process.exit(1);
+  }
+  if (opts.seedsFile) {
+    console.log(`Seeds: ${seeds.length} URL(s) from ${opts.seedsFile}`);
+  } else {
+    console.log('Seed URL:', opts.seed);
+  }
   console.log('Options:', {
     maxRounds: opts.maxRounds,
     maxPagesBudget: opts.maxPagesBudget,
@@ -177,12 +212,14 @@ async function main() {
   let summary;
   try {
     summary = await runDistributedCrawlAsync({
-      seeds: [opts.seed],
+      seeds,
       groupName: 'all',
       maxRounds: opts.maxRounds,
       maxDepth: opts.maxDepth,
       maxPagesBudget: opts.maxPagesBudget,
       jobPrefix: 'crawl_demo',
+      includeDocStats: opts.docStats,
+      recipePolicyPreset: opts.recipePolicyPreset,
     });
   } catch (e) {
     console.error('Crawl failed:', e);

@@ -5,11 +5,14 @@
   "description": "Distributed crawl utilities (used with chris-code/distribution).",
   "scripts": {
     "crawl-demo": "node crawl/run-crawl-demo.js",
+    "crawl-test": "node crawl/test/frontierLinks.test.js",
+    "crawl-sitemap-seeds": "node crawl/run-build-sitemap-seeds.js",
     "indexing-check": "node -e \"require('./crawl/indexing')\"",
     "index-to-db": "node crawl/indexing/run-index-to-db.js",
     "index-distributed": "node crawl/indexing/run-distributed-index.js",
     "query-distributed": "node crawl/indexing/run-distributed-query.js --query \"vegetarian under 30 minutes\"",
-    "verify-db": "node crawl/indexing/verify-db.js"
+    "verify-db": "node crawl/indexing/verify-db.js",
+    "aws-eval": "node crawl/run-aws-eval.js"
   },
   "dependencies": {
     "html-to-text": "^9.0.5",
