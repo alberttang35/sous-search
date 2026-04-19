@@ -2,7 +2,7 @@
 /**
  * Single-node distributed crawl smoke test: boots the course-style HTTP node, registers
  * local services (store, etc.), runs runDistributedCrawl, prints a summary and sample
- * crawl_docs from disk.
+ * crawl_docs from local.store.
  *
  * Usage (from chris-code/):
  *   node crawl/run-crawl-demo.js
@@ -14,8 +14,6 @@
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
 const utilMod = require('../distribution/util/util.js');
 
 /** Default: Food.com recipe hub (200 OK); use --seed for a specific recipe page. */
@@ -52,7 +50,7 @@ function parseArgs() {
   --max-rounds <n>      MR frontier rounds (default 2)
   --max-pages <n>       Stop after this many visited URLs (default 10)
   --max-depth <n>       Max BFS depth from seed (default 3)
-  --sample-docs <n>     Print up to N crawl_docs from disk (default 5)
+  --sample-docs <n>     Print up to N crawl_docs from local.store (default 5)
 
 Run from the chris-code/ directory so ../distribution resolves correctly.
 `);
@@ -90,64 +88,47 @@ function startNodeServer() {
 }
 
 /**
- * @param {string} nid
- * @param {string} gid
- * @returns {string}
- */
-function storeDirForGid(nid, gid) {
-  return path.resolve(__dirname, '../store', nid, gid);
-}
-
-/**
- * @param {string} filename
- * @returns {string}
- */
-function hexFilenameToKey(filename) {
-  return Buffer.from(filename, 'hex').toString('utf8');
-}
-
-/**
  * @param {typeof import('./gids.js')} gids
- * @param {string} nid
  * @param {number} limit
  */
-function printSampleCrawlDocs(gids, nid, limit) {
-  const dir = storeDirForGid(nid, gids.GID_DOCS);
+async function printSampleCrawlDocs(gids, limit) {
   console.log('\n--- Sample crawl_docs (local store) ---');
-  console.log('Directory:', dir);
-  if (!fs.existsSync(dir)) {
-    console.log('(no crawl_docs directory yet)');
-    return;
+  /** @type {string[]} */
+  let keys = [];
+  try {
+    const rawKeys = await new Promise((resolve, reject) => {
+      globalThis.distribution.local.store.get({key: null, gid: gids.GID_DOCS}, (err, v) => {
+        if (err) reject(err);
+        else resolve(v);
+      });
+    });
+    keys = Array.isArray(rawKeys) ? rawKeys : [];
+  } catch (_e) {
+    keys = [];
   }
-  const files = fs.readdirSync(dir).filter((f) => f.length > 0);
-  if (!files.length) {
+  if (!keys.length) {
     console.log('(empty)');
     return;
   }
   let n = 0;
-  for (const f of files) {
+  for (const key of keys) {
     if (n >= limit) {
-      console.log(`... and ${files.length - limit} more file(s)`);
+      console.log(`... and ${keys.length - limit} more record(s)`);
       break;
-    }
-    const p = path.join(dir, f);
-    let raw;
-    try {
-      raw = fs.readFileSync(p, 'utf8');
-    } catch (_e) {
-      continue;
     }
     let doc;
     try {
-      doc = utilMod.deserialize(raw);
+      doc = await new Promise((resolve, reject) => {
+        globalThis.distribution.local.store.get({key, gid: gids.GID_DOCS}, (err, v) => {
+          if (err) reject(err);
+          else resolve(v);
+        });
+      });
     } catch (_e) {
-      console.log(`\n[${f}] (could not deserialize)`);
-      n++;
       continue;
     }
-    const urlKey = hexFilenameToKey(f);
     const preview = {
-      storeKeyUrl: urlKey,
+      storeKeyUrl: key,
       url: doc.url,
       title: doc.title,
       times: doc.times,
@@ -213,8 +194,7 @@ async function main() {
     console.log(JSON.stringify(summary, null, 2));
   }
 
-  const nid = String(globalThis.distribution.util.id.getNID(globalThis.distribution.node.config));
-  printSampleCrawlDocs(gids, nid, opts.sampleDocs);
+  await printSampleCrawlDocs(gids, opts.sampleDocs);
 
   const srv = globalThis.distribution.node.server;
   if (srv) {

@@ -58,6 +58,33 @@ function localStorePutPromise(state, cfg) {
 }
 
 /**
+ * @param {{ key: string, gid: string }} cfg
+ * @returns {Promise<any>}
+ */
+function localStoreDelPromise(cfg) {
+  return new Promise((resolve, reject) => {
+    globalThis.distribution.local.store.del(cfg, (err, val) => {
+      if (err) reject(err);
+      else resolve(val);
+    });
+  });
+}
+
+/**
+ * @param {any} state
+ * @param {{ key: string, gid: string }} cfg
+ * @returns {Promise<any>}
+ */
+function localStoreAppendPromise(state, cfg) {
+  return new Promise((resolve, reject) => {
+    globalThis.distribution.local.store.append(state, cfg, (err, val) => {
+      if (err) reject(err);
+      else resolve(val);
+    });
+  });
+}
+
+/**
  * @param {any} state
  * @param {{ key: string, gid: string }} cfg
  * @returns {Promise<any>}
@@ -85,6 +112,33 @@ function allStoreGetPromise(cfg) {
 }
 
 /**
+ * @param {{ key: string, gid: string }} cfg
+ * @returns {Promise<any>}
+ */
+function allStoreDelPromise(cfg) {
+  return new Promise((resolve, reject) => {
+    globalThis.distribution.all.store.del(cfg, (err, val) => {
+      if (err) reject(err);
+      else resolve(val);
+    });
+  });
+}
+
+/**
+ * @param {any} state
+ * @param {{ key: string, gid: string }} cfg
+ * @returns {Promise<any>}
+ */
+function allStoreAppendPromise(state, cfg) {
+  return new Promise((resolve, reject) => {
+    globalThis.distribution.all.store.append(state, cfg, (err, val) => {
+      if (err) reject(err);
+      else resolve(val);
+    });
+  });
+}
+
+/**
  * @param {Object} configuration MRConfig (map, reduce, inputGid?, jobId?)
  * @returns {Promise<any[]>}
  */
@@ -101,7 +155,11 @@ module.exports = {
   listKeysAllNodes,
   localStoreGetPromise,
   localStorePutPromise,
+  localStoreDelPromise,
+  localStoreAppendPromise,
   allStorePutPromise,
   allStoreGetPromise,
+  allStoreDelPromise,
+  allStoreAppendPromise,
   mrExecPromise,
 };

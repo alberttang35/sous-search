@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 // @ts-check
-// reads serialized crawl_docs from the local store (same layout as run-crawl-demo) and upserts into postgres
+// debug/local indexing path: reads crawl_docs via distribution.local.store and upserts into postgres
 
-const fs = require('fs');
-const path = require('path');
-const utilMod = require('../../distribution/util/util.js');
+const {GID_DOCS} = require('../gids.js');
+const {localStoreGetPromise} = require('../storeUtil.js');
 const {normalizeCrawlDoc} = require('./normalize.js');
 const {applyLlmFallback} = require('./llmFallback.js');
 const {createPoolFromEnv, writeCanonicalRecipe} = require('./db.js');
+const {
+  bootstrapDistributionRuntime,
+  stopDistributionRuntime,
+} = require('../distributedRuntime.js');
 
 function parseArgs() {
   const out = {
@@ -26,7 +29,7 @@ function parseArgs() {
     } else if (a === '--help' || a === '-h') {
       console.log(`Usage: node crawl/indexing/run-index-to-db.js [options]
 
-  --port <n>             Port used to compute local node id (default CRAWL_DEMO_PORT or 17779)
+  --port <n>             Runtime node port (default CRAWL_DEMO_PORT or 17779)
   --limit <n>            Maximum number of crawl docs to index+persist (default 25)
   --no-llm-fallback      Disable LLM fallback stage
 
@@ -39,21 +42,14 @@ Required env:
   return out;
 }
 
-function resolveDocsDirectory(port) {
-  const nid = String(utilMod.id.getNID({ip: '127.0.0.1', port}));
-  return path.resolve(__dirname, '../../store', nid, 'crawl_docs');
-}
-
 async function main() {
   const opts = parseArgs();
-  const docsDir = resolveDocsDirectory(opts.nodePort);
-  if (!fs.existsSync(docsDir)) {
-    throw new Error(`crawl_docs directory not found at ${docsDir}`);
-  }
-
-  const files = fs.readdirSync(docsDir).slice(0, opts.limit);
+  await bootstrapDistributionRuntime({port: opts.nodePort, gid: 'all'});
+  const keys = await localStoreGetPromise({key: null, gid: GID_DOCS});
+  const files = (Array.isArray(keys) ? keys : []).slice(0, opts.limit);
   if (!files.length) {
-    console.log('No crawl docs found.');
+    console.log('No crawl docs found in local store.');
+    await stopDistributionRuntime();
     return;
   }
 
@@ -62,8 +58,7 @@ async function main() {
   let written = 0;
   try {
     for (const f of files) {
-      const raw = fs.readFileSync(path.join(docsDir, f), 'utf8');
-      const doc = utilMod.deserialize(raw);
+      const doc = await localStoreGetPromise({key: f, gid: GID_DOCS});
       if (!doc || !doc.url) continue;
 
       // store payload already ran recipeExtract at crawl time; don't re-parse stripped text as html
@@ -85,6 +80,7 @@ async function main() {
   } finally {
     client.release();
     await pool.end();
+    await stopDistributionRuntime();
   }
 }
 

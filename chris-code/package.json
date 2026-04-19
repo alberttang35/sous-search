@@ -7,6 +7,8 @@
     "crawl-demo": "node crawl/run-crawl-demo.js",
     "indexing-check": "node -e \"require('./crawl/indexing')\"",
     "index-to-db": "node crawl/indexing/run-index-to-db.js",
+    "index-distributed": "node crawl/indexing/run-distributed-index.js",
+    "query-distributed": "node crawl/indexing/run-distributed-query.js --query \"vegetarian under 30 minutes\"",
     "verify-db": "node crawl/indexing/verify-db.js"
   },
   "dependencies": {
