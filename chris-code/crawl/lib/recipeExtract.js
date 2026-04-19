@@ -1,5 +1,5 @@
 // @ts-check
-const {convert} = require('html-to-text');
+const { convert } = require("html-to-text");
 
 /**
  * @typedef {Object} RecipeTimes
@@ -18,7 +18,7 @@ const {convert} = require('html-to-text');
  * @property {string[]} [categories]
  */
 
-const textOpts = {wordwrap: false, preserveNewlines: false};
+const textOpts = { wordwrap: false, preserveNewlines: false };
 
 /**
  * Parse ISO 8601 duration to total minutes (PT25M, PT1H30M, etc.).
@@ -26,12 +26,12 @@ const textOpts = {wordwrap: false, preserveNewlines: false};
  * @returns {number | undefined}
  */
 function iso8601DurationToMinutes(d) {
-  if (!d || typeof d !== 'string') return undefined;
+  if (!d || typeof d !== "string") return undefined;
   const m = d.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/i);
   if (!m) return undefined;
-  const h = parseInt(m[1] || '0', 10) || 0;
-  const min = parseInt(m[2] || '0', 10) || 0;
-  const s = parseInt(m[3] || '0', 10) || 0;
+  const h = parseInt(m[1] || "0", 10) || 0;
+  const min = parseInt(m[2] || "0", 10) || 0;
+  const s = parseInt(m[3] || "0", 10) || 0;
   return Math.round(h * 60 + min + s / 60);
 }
 
@@ -40,7 +40,7 @@ function iso8601DurationToMinutes(d) {
  * @returns {RecipeTimes | undefined}
  */
 function timesFromSchema(node) {
-  if (!node || typeof node !== 'object') return undefined;
+  if (!node || typeof node !== "object") return undefined;
   const o = /** @type {Record<string, unknown>} */ (node);
   const total =
     iso8601DurationToMinutes(/** @type {string} */ (o.totalTime)) ??
@@ -69,12 +69,12 @@ function asArray(x) {
  * @returns {Record<string, unknown> | null}
  */
 function findRecipeObject(data) {
-  if (!data || typeof data !== 'object') return null;
+  if (!data || typeof data !== "object") return null;
   const root = /** @type {Record<string, unknown>} */ (data);
-  if (root['@type'] === 'Recipe' || (Array.isArray(root['@type']) && root['@type'].includes('Recipe'))) {
+  if (root["@type"] === "Recipe" || (Array.isArray(root["@type"]) && root["@type"].includes("Recipe"))) {
     return root;
   }
-  const graph = root['@graph'];
+  const graph = root["@graph"];
   if (Array.isArray(graph)) {
     for (const item of graph) {
       const r = findRecipeObject(item);
@@ -91,7 +91,7 @@ function findRecipeObject(data) {
  */
 function extractCrawlDoc(html, pageUrl) {
   /** @type {CrawlDocRecord} */
-  const doc = {url: pageUrl, text: convert(html, textOpts)};
+  const doc = { url: pageUrl, text: convert(html, textOpts) };
 
   const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
   if (titleMatch) doc.title = titleMatch[1].trim();
@@ -110,19 +110,19 @@ function extractCrawlDoc(html, pageUrl) {
       for (const piece of asArray(data)) {
         const recipe = findRecipeObject(piece);
         if (!recipe) continue;
-        if (recipe.name && typeof recipe.name === 'string') doc.title = recipe.name;
+        if (recipe.name && typeof recipe.name === "string") doc.title = recipe.name;
         const t = timesFromSchema(recipe);
         if (t) doc.times = t;
         const ing = recipe.recipeIngredient;
         if (Array.isArray(ing)) {
           doc.ingredients = ing.map((x) => String(x));
-        } else if (typeof ing === 'string') {
+        } else if (typeof ing === "string") {
           doc.ingredients = [ing];
         }
         const cat = recipe.recipeCategory;
         if (Array.isArray(cat)) {
           doc.categories = cat.map((x) => String(x));
-        } else if (typeof cat === 'string') {
+        } else if (typeof cat === "string") {
           doc.categories = [cat];
         }
         break;
@@ -133,7 +133,7 @@ function extractCrawlDoc(html, pageUrl) {
   if (!doc.times) {
     const bodyMatch = doc.text?.match(/(?:total|prep|cook)\s*time\s*[:\s]*(\d+)\s*(?:min|minutes)/i);
     if (bodyMatch) {
-      doc.times = {totalMinutes: parseInt(bodyMatch[1], 10)};
+      doc.times = { totalMinutes: parseInt(bodyMatch[1], 10) };
     }
   }
 

@@ -5,11 +5,11 @@
  * globalThis.__sousCrawlMrOpts and returns a thin wrapper that survives deserialization (multi-node:
  * require this module on every node so those globals exist).
  */
-const {fetchPage} = require('./lib/fetchPage.js');
-const {parseHtml, extractFoodRecipeLinks} = require('./lib/parseHtml.js');
-const {extractCrawlDoc} = require('./lib/recipeExtract.js');
-const {localStorePutPromise, allStorePutPromise, allStoreGetPromise} = require('./storeUtil.js');
-const {GID_VISITED, GID_DOCS} = require('./gids.js');
+const { fetchPage } = require("./lib/fetchPage.js");
+const { parseHtml, extractFoodRecipeLinks } = require("./lib/parseHtml.js");
+const { extractCrawlDoc } = require("./lib/recipeExtract.js");
+const { localStorePutPromise, allStorePutPromise, allStoreGetPromise } = require("./storeUtil.js");
+const { GID_VISITED, GID_DOCS } = require("./gids.js");
 
 /**
  * @typedef {Object} FrontierMeta
@@ -28,7 +28,7 @@ const {GID_VISITED, GID_DOCS} = require('./gids.js');
  * @returns {FrontierMeta}
  */
 function mergeFrontierMetas(metas) {
-  let best = metas[0] || {depth: 0, parent: null};
+  let best = metas[0] || { depth: 0, parent: null };
   let minD = best.depth ?? 0;
   for (let i = 1; i < metas.length; i++) {
     const m = metas[i];
@@ -38,7 +38,7 @@ function mergeFrontierMetas(metas) {
       best = m;
     }
   }
-  return {depth: best.depth ?? 0, parent: best.parent ?? null};
+  return { depth: best.depth ?? 0, parent: best.parent ?? null };
 }
 
 /**
@@ -58,21 +58,22 @@ function getMrOpts() {
 async function runMapFromGlobal(urlKey, rawMeta) {
   const opts = getMrOpts().map;
   if (!opts) {
-    throw new Error('sous crawl: map opts missing (__sousCrawlMrOpts.map)');
+    throw new Error("sous crawl: map opts missing (__sousCrawlMrOpts.map)");
   }
   const maxDepth = opts.maxDepth ?? 8;
   const maxOutlinks = opts.maxOutlinks ?? 150;
   const fetchOptions = opts.fetchOptions || {};
 
   /** @type {FrontierMeta} */
-  const meta = typeof rawMeta === 'object' && rawMeta && !Array.isArray(rawMeta) ?
-    /** @type {FrontierMeta} */ (rawMeta) :
-    {depth: 0, parent: null};
+  const meta =
+    typeof rawMeta === "object" && rawMeta && !Array.isArray(rawMeta)
+      ? /** @type {FrontierMeta} */ (rawMeta)
+      : { depth: 0, parent: null };
   const depth = meta.depth ?? 0;
   if (depth > maxDepth) return [];
 
   try {
-    await allStoreGetPromise({key: urlKey, gid: GID_VISITED});
+    await allStoreGetPromise({ key: urlKey, gid: GID_VISITED });
     return [];
   } catch (_e) {
     // not visited cluster-wide
@@ -81,11 +82,11 @@ async function runMapFromGlobal(urlKey, rawMeta) {
   const fetched = await fetchPage(urlKey, fetchOptions);
   if (!fetched || !fetched.html) return [];
 
-  await allStorePutPromise(true, {key: urlKey, gid: GID_VISITED});
+  await allStorePutPromise(true, { key: urlKey, gid: GID_VISITED });
 
   const pageUrl = fetched.finalUrl || urlKey;
   const doc = extractCrawlDoc(fetched.html, pageUrl);
-  await localStorePutPromise(doc, {key: urlKey, gid: GID_DOCS});
+  await localStorePutPromise(doc, { key: urlKey, gid: GID_DOCS });
 
   const dom = parseHtml(fetched.html, pageUrl);
   const links = extractFoodRecipeLinks(dom, pageUrl, maxOutlinks);
@@ -95,7 +96,7 @@ async function runMapFromGlobal(urlKey, rawMeta) {
   for (const link of links) {
     if (seen.has(link)) continue;
     seen.add(link);
-    out.push({[link]: {depth: nextDepth, parent: urlKey}});
+    out.push({ [link]: { depth: nextDepth, parent: urlKey } });
   }
   return out;
 }
@@ -107,23 +108,23 @@ async function runMapFromGlobal(urlKey, rawMeta) {
 async function runReduceFromGlobal(targetUrl, valueArray) {
   const ro = getMrOpts().reduce;
   if (!ro || !ro.nextFrontierGid) {
-    throw new Error('sous crawl: reduce opts missing (__sousCrawlMrOpts.reduce)');
+    throw new Error("sous crawl: reduce opts missing (__sousCrawlMrOpts.reduce)");
   }
   const maxDepth = ro.maxDepth ?? 8;
   const nextFrontierGid = ro.nextFrontierGid;
 
   const merged = mergeFrontierMetas(valueArray);
-  if ((merged.depth ?? 0) > maxDepth) return {url: targetUrl, added: false};
+  if ((merged.depth ?? 0) > maxDepth) return { url: targetUrl, added: false };
 
   try {
-    await allStoreGetPromise({key: targetUrl, gid: GID_VISITED});
-    return {url: targetUrl, added: false};
+    await allStoreGetPromise({ key: targetUrl, gid: GID_VISITED });
+    return { url: targetUrl, added: false };
   } catch (_e) {
     // not yet crawled
   }
 
-  await allStorePutPromise(merged, {key: targetUrl, gid: nextFrontierGid});
-  return {url: targetUrl, added: true};
+  await allStorePutPromise(merged, { key: targetUrl, gid: nextFrontierGid });
+  return { url: targetUrl, added: true };
 }
 
 globalThis.__sousCrawlMrRunMap = runMapFromGlobal;
@@ -161,4 +162,4 @@ function createCrawlReducer(opts) {
   };
 }
 
-module.exports = {createCrawlMapper, createCrawlReducer, mergeFrontierMetas};
+module.exports = { createCrawlMapper, createCrawlReducer, mergeFrontierMetas };

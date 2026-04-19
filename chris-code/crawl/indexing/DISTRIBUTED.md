@@ -15,7 +15,7 @@ basic documentation + command outlines
      - `index_attr_category_v1`
      - `index_attr_timebucket_v1`
 3. Stats (mr pass 2): computed from `index_docmeta_v1` into `index_stats_v1`
-4. Query (structured-first hybrid): `crawl/indexing/run-distributed-query.js`
+4. Query (structured-first hybrid): `crawl/indexing/run-distributed-query.js` — if there are no hits but text terms include unknown tokens, the JSON may include `did_you_mean` (edit-distance suggestions ranked by `df:` stats in `index_stats_v1`). Pass `--auto-correct` to run one follow-up query with `suggested_query`.
 
 ## Commands
 

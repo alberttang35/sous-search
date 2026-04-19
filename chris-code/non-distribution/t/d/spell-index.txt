@@ -1,0 +1,2 @@
+stuff | https://example.com/recipes 500
+stuffy | https://example.com/other 2

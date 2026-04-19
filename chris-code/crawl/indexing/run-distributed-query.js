@@ -14,6 +14,7 @@ function parseArgs() {
     gid: 'all',
     limit: parseInt(process.env.QUERY_LIMIT || '10', 10),
     query: '',
+    autoCorrect: false,
   };
   for (let i = 2; i < process.argv.length; i++) {
     const a = process.argv[i];
@@ -25,6 +26,8 @@ function parseArgs() {
       out.limit = parseInt(process.argv[++i], 10);
     } else if (a === '--query' && process.argv[i + 1]) {
       out.query = process.argv[++i];
+    } else if (a === '--auto-correct') {
+      out.autoCorrect = true;
     } else if (a === '--help' || a === '-h') {
       console.log(`Usage: node crawl/indexing/run-distributed-query.js --query "<text>" [options]
 
@@ -32,6 +35,7 @@ function parseArgs() {
   --port <n>             Runtime port for this process (default 17779)
   --gid <name>           Distribution group (default all)
   --limit <n>            Max results (default 10)
+  --auto-correct         If the first query returns no hits but did_you_mean is set, run once more with suggested_query
 `);
       process.exit(0);
     }
@@ -46,7 +50,18 @@ async function main() {
   }
 
   await bootstrapDistributionRuntime({port: opts.port, gid: opts.gid});
-  const result = await runHybridQuery(opts.query, opts.limit);
+  let result = await runHybridQuery(opts.query, opts.limit);
+  if (
+    opts.autoCorrect &&
+    result.total_hits === 0 &&
+    result.did_you_mean &&
+    result.did_you_mean.suggested_query
+  ) {
+    const first = result;
+    result = await runHybridQuery(result.did_you_mean.suggested_query, opts.limit);
+    result.spell_check_original_query = first.query;
+    result.spell_check_applied = true;
+  }
   console.log(JSON.stringify(result, null, 2));
   await stopDistributionRuntime();
 }

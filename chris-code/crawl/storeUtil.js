@@ -17,14 +17,14 @@ function listKeysAllNodes(groupName, gid, callback) {
     let done = 0;
     nodeArr.forEach((node) => {
       dist.local.comm.send(
-          [{key: null, gid}],
-          {node, service: 'store', method: 'get', gid: 'local'},
-          (err, keys) => {
-            if (!err && Array.isArray(keys)) allKeys.push(...keys);
-            if (++done === nodeArr.length) {
-              callback(null, [...new Set(allKeys)]);
-            }
-          },
+        [{ key: null, gid }],
+        { node, service: "store", method: "get", gid: "local" },
+        (err, keys) => {
+          if (!err && Array.isArray(keys)) allKeys.push(...keys);
+          if (++done === nodeArr.length) {
+            callback(null, [...new Set(allKeys)]);
+          }
+        },
       );
     });
   });
