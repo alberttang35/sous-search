@@ -13,12 +13,12 @@
 'use strict';
 
 const fs = require('fs');
+const http = require('node:http');
 const path = require('path');
 const {runDistributedCrawlAsync} = require('./coordinator.js');
 const {
   bootstrapDistributionRuntime,
   stopDistributionRuntime,
-  addNodeToGroup,
 } = require('./distributedRuntime.js');
 const {runDistributedIndexJobs} = require('./indexing/distributedIndexPipeline.js');
 const {closePostgresIfOpen} = require('./indexing/mrIndexRound.js');
@@ -69,6 +69,47 @@ function latencyStats(ms) {
   };
 }
 
+/**
+ * Register this node with a main node's group via HTTP.
+ * @param {{ip: string, port: number}} mainNode
+ * @param {string} gid
+ * @param {{ip: string, port: number}} thisNode
+ */
+function registerWithMainNode(mainNode, gid, thisNode) {
+  return new Promise((resolve, reject) => {
+    const path = `/${gid}/groups/add`;
+    const body = globalThis.distribution.util.serialize([thisNode]);
+    const options = {
+      hostname: mainNode.ip,
+      port: mainNode.port,
+      method: 'PUT',
+      path: path,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    };
+
+    const req = http.request(options, (res) => {
+      let responseData = '';
+      res.on('data', (chunk) => { responseData += chunk; });
+      res.on('end', () => {
+        try {
+          const [err, val] = globalThis.distribution.util.deserialize(responseData);
+          if (err) reject(new Error(err.message || String(err)));
+          else resolve(val);
+        } catch (e) {
+          reject(new Error('Failed to parse registration response: ' + e.message));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 function parseArgs() {
   const argv = process.argv;
   const allowLlmFallback = argv.includes('--allow-llm-fallback');
@@ -97,20 +138,17 @@ function parseArgs() {
     queries: [...DEFAULT_QUERIES],
     crawlJobPrefix: 'aws_eval_crawl',
     includeDocStats: true,
-    nodes: /** @type {{ip:string, port:number}[] | null} */ (null),
+    joinNode: /** @type {{ip:string, port:number} | null} */ (null),
   };
 
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--seeds-file' && argv[i + 1]) {
       out.seedsFile = path.resolve(process.cwd(), argv[++i]);
-    } else if (a === '--nodes' && argv[i + 1]) {
-      out.nodes = argv[++i].split(',').map(s => {
-        const [ip, port] = s.split(':');
-        return {ip, port: parseInt(port, 10)};
-      });
-    }
-    else if (a === '--out-dir' && argv[i + 1]) {
+    } else if (a === '--join' && argv[i + 1]) {
+      const [ip, port] = argv[++i].split(':');
+      out.joinNode = {ip, port: parseInt(port, 10)};
+    } else if (a === '--out-dir' && argv[i + 1]) {
       out.outDir = path.resolve(process.cwd(), argv[++i]);
     } else if (a === '--port' && argv[i + 1]) {
       out.port = parseInt(argv[++i], 10);
@@ -164,6 +202,7 @@ Runtime:
   --port <n>              HTTP port (env CRAWL_DEMO_PORT)
   --ip <addr>             Bind IP (default env BIND_IP or 127.0.0.1)
   --gid <name>            Distribution group (default all)
+  --join <ip:port>        Join an existing node as worker (for multi-node)
 
 Crawl:
   --max-pages <n>         maxPagesBudget (visited URLs)
@@ -291,21 +330,35 @@ async function main() {
   fs.mkdirSync(opts.outDir, {recursive: true});
 
   const bindIp = opts.bindIp || undefined;
-  await bootstrapDistributionRuntime({
-    port: opts.port,
-    gid: opts.gid,
-    ip: bindIp,
-  });
 
-  if (opts.nodes) {
-    for (const node of opts.nodes) {
-      await addNodeToGroup(node, opts.gid);
-    }
+  // If joining an existing node, register with it first
+  if (opts.joinNode) {
+    await bootstrapDistributionRuntime({
+      port: opts.port,
+      gid: opts.gid,
+      ip: bindIp,
+    });
+
+    // Register this node with the main node's group
+    await registerWithMainNode(opts.joinNode, opts.gid, {
+      ip: globalThis.distribution.node.config.ip,
+      port: opts.port,
+    });
+
+    console.error(
+        `[run-aws-eval] joined ${opts.joinNode.ip}:${opts.joinNode.port} as ${globalThis.distribution.node.config.ip}:${opts.port}`,
+    );
+  } else {
+    await bootstrapDistributionRuntime({
+      port: opts.port,
+      gid: opts.gid,
+      ip: bindIp,
+    });
+
+    console.error(
+        `[run-aws-eval] listening ${globalThis.distribution.node.config.ip}:${opts.port} seeds=${seeds.length} LLM=${opts.allowLlmFallback ? 'allowed' : 'off'}`,
+    );
   }
-
-  console.error(
-      `[run-aws-eval] listening ${globalThis.distribution.node.config.ip}:${opts.port} seeds=${seeds.length} LLM=${opts.allowLlmFallback ? 'allowed' : 'off'}`,
-  );
 
   /** @type {Record<string, unknown>} */
   const metrics = {
