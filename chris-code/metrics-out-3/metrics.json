@@ -1,5 +1,5 @@
 {
-  "startedAt": "2026-04-20T02:59:06.794Z",
+  "startedAt": "2026-04-20T03:30:19.528Z",
   "notes": [
     "maxPagesBudget is checked between MR rounds; one round can visit more pages than the budget before the next check."
   ],
@@ -24,8 +24,8 @@
     "withPostgresSink": false
   },
   "crawl": {
-    "wallClockMs": 596,
-    "throughputPagesPerSec": 427.8523489932886,
+    "wallClockMs": 3255,
+    "throughputPagesPerSec": 78.3410138248848,
     "summary": {
       "roundsCompleted": 1,
       "frontierAdds": 0,
@@ -34,7 +34,7 @@
         {
           "round": 0,
           "frontierInKeys": 4,
-          "mrWallMs": 28,
+          "mrWallMs": 51,
           "visitedAfter": 255,
           "visitedDelta": 0,
           "frontierAddsRound": 0,
@@ -46,277 +46,277 @@
     }
   },
   "index": {
-    "wallClockMs": 888667,
-    "buildWallMs": 538238,
-    "statsWallMs": 350427,
-    "throughputDocsIndexedPerSecBuild": 0.47376811001824465,
+    "wallClockMs": 663377,
+    "buildWallMs": 380898,
+    "statsWallMs": 282474,
+    "throughputDocsIndexedPerSecBuild": 0.6694705669234283,
     "build": {
-      "postingsKeys": 1009,
-      "docMetaKeys": 160,
+      "postingsKeys": 461,
+      "docMetaKeys": 150,
       "attrKeys": 38,
       "postgresWrites": 0,
-      "totalResultRows": 1373
+      "totalResultRows": 797
     },
     "stats": {
-      "ms": 350427,
+      "ms": 282474,
       "statRows": 2,
-      "dfRows": 1064,
-      "totalResultRows": 1066
+      "dfRows": 915,
+      "totalResultRows": 917
     }
   },
   "query": {
-    "wallClockMs": 825,
+    "wallClockMs": 975,
     "taskCount": 60,
-    "throughputQueriesPerSec": 72.72727272727273,
+    "throughputQueriesPerSec": 61.53846153846154,
     "latency": {
       "count": 60,
-      "min": 7.386958,
-      "max": 46.59125,
-      "meanMs": 13.71005285,
-      "p50Ms": 9.751959,
-      "p95Ms": 25.578875,
-      "p99Ms": 46.59125
+      "min": 5.455417,
+      "max": 46.996208,
+      "meanMs": 16.2088021,
+      "p50Ms": 7.861625,
+      "p95Ms": 41.253625,
+      "p99Ms": 46.996208
     },
     "samples": [
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 21.623834
+        "latencyMs": 28.158208
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 46.59125
+        "latencyMs": 46.996208
       },
       {
         "query": "category:dessert",
-        "latencyMs": 14.276292
+        "latencyMs": 17.202583
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.907208
+        "latencyMs": 14.351667
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 35.035834
+        "latencyMs": 44.037292
       },
       {
         "query": "category:dessert",
-        "latencyMs": 17.236208
+        "latencyMs": 13.690041
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 10.899042
+        "latencyMs": 15.334208
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 25.578875
+        "latencyMs": 33.616167
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.965917
+        "latencyMs": 6.328333
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.531875
+        "latencyMs": 7.861625
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 39.684834
+        "latencyMs": 28.21175
       },
       {
         "query": "category:dessert",
-        "latencyMs": 23.649375
+        "latencyMs": 5.704958
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.768583
+        "latencyMs": 7.202292
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 17.349709
+        "latencyMs": 27.496958
       },
       {
         "query": "category:dessert",
-        "latencyMs": 10.4485
+        "latencyMs": 6.031458
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.756625
+        "latencyMs": 7.578167
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 15.754709
+        "latencyMs": 28.2505
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.387459
+        "latencyMs": 5.86675
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.5145
+        "latencyMs": 7.074334
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 16.512334
+        "latencyMs": 29.409709
       },
       {
         "query": "category:dessert",
-        "latencyMs": 10.594583
+        "latencyMs": 5.992
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 9.034542
+        "latencyMs": 6.881125
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 17.2285
+        "latencyMs": 30.603333
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.558417
+        "latencyMs": 5.878791
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.433
+        "latencyMs": 7.969584
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 15.773208
+        "latencyMs": 45.903375
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.526292
+        "latencyMs": 6.31775
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.099333
+        "latencyMs": 8.077334
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 15.3645
+        "latencyMs": 29.049125
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.274708
+        "latencyMs": 6.10025
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.391
+        "latencyMs": 8.472708
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 17.961458
+        "latencyMs": 28.376209
       },
       {
         "query": "category:dessert",
-        "latencyMs": 18.330834
+        "latencyMs": 6.455625
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.80775
+        "latencyMs": 7.514167
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 16.109583
+        "latencyMs": 26.694417
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.692708
+        "latencyMs": 6.452834
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 11.770541
+        "latencyMs": 6.919625
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 17.302
+        "latencyMs": 28.308333
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.138084
+        "latencyMs": 5.985291
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.061584
+        "latencyMs": 7.606041
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 18.216042
+        "latencyMs": 26.23725
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.720916
+        "latencyMs": 5.455417
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.987917
+        "latencyMs": 7.782
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 16.32075
+        "latencyMs": 27.003792
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.751959
+        "latencyMs": 7.545625
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 9.019
+        "latencyMs": 13.548541
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 16.181791
+        "latencyMs": 41.253625
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.254167
+        "latencyMs": 6.720209
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.386958
+        "latencyMs": 7.9885
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 16.696208
+        "latencyMs": 30.850375
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.226458
+        "latencyMs": 6.588
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 7.785708
+        "latencyMs": 7.367041
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 17.210875
+        "latencyMs": 29.427458
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.609
+        "latencyMs": 6.544625
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 9.537334
+        "latencyMs": 7.663042
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 20.665125
+        "latencyMs": 28.020167
       },
       {
         "query": "category:dessert",
-        "latencyMs": 8.506459
+        "latencyMs": 5.844458
       },
       {
         "query": "vegetarian under 30 minutes",
-        "latencyMs": 8.550208
+        "latencyMs": 7.742542
       },
       {
         "query": "chicken air fryer",
-        "latencyMs": 16.013875
+        "latencyMs": 27.202459
       },
       {
         "query": "category:dessert",
-        "latencyMs": 9.036833
+        "latencyMs": 5.781875
       }
     ]
   }
