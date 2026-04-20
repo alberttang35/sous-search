@@ -12,7 +12,8 @@
     "index-distributed": "node crawl/indexing/run-distributed-index.js",
     "query-distributed": "node crawl/indexing/run-distributed-query.js --query \"vegetarian under 30 minutes\"",
     "verify-db": "node crawl/indexing/verify-db.js",
-    "aws-eval": "node crawl/run-aws-eval.js"
+    "aws-eval": "node crawl/run-aws-eval.js",
+    "cluster-launcher": "node crawl/cluster-launcher.js"
   },
   "dependencies": {
     "html-to-text": "^9.0.5",
