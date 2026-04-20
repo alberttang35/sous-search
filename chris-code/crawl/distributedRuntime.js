@@ -31,6 +31,21 @@ function startNodeServer() {
 }
 
 /**
+ * Add additional nodes to the group after initial bootstrap.
+ * @param {{ip: string, port: number}} nodeConfig
+ * @param {string} gid
+ * @returns {Promise<void>}
+ */
+async function addNodeToGroup(nodeConfig, gid) {
+  return new Promise((resolve, reject) => {
+    globalThis.distribution.local.groups.add(gid, nodeConfig, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+}
+
+/**
  * Bootstraps a single node with local + all distribution services.
  * @param {{port: number, ip?: string, gid?: string}} opts
  * @returns {Promise<void>}
@@ -69,4 +84,5 @@ async function stopDistributionRuntime() {
 module.exports = {
   bootstrapDistributionRuntime,
   stopDistributionRuntime,
+  addNodeToGroup,
 };

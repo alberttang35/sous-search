@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-04-20T02:50:18.330Z",
+  "notes": [
+    "maxPagesBudget is checked between MR rounds; one round can visit more pages than the budget before the next check."
+  ],
+  "node": {
+    "bindIp": "127.0.0.1",
+    "port": 17779,
+    "gid": "all"
+  },
+  "options": {
+    "seedsFile": "/usr/src/app/chris-code/crawl/eval/seeds-four-hubs.txt",
+    "seedCount": 4,
+    "maxPagesBudget": 100,
+    "maxRounds": 50,
+    "maxDepth": 6,
+    "maxOutlinks": 150,
+    "maxWallClockMs": null,
+    "recipePolicyPreset": "multisite",
+    "allowLlmFallback": false,
+    "skipIndex": false,
+    "skipQuery": false,
+    "skipStats": false,
+    "withPostgresSink": false
+  },
+  "crawl": {
+    "wallClockMs": 75065,
+    "error": "Error: connect ECONNREFUSED 192.168.1.11:17779\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"
+  },
+  "index": null,
+  "query": null,
+  "error": "Error: connect ECONNREFUSED 192.168.1.11:17779\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)"
+}
