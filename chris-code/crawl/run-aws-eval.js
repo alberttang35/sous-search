@@ -18,6 +18,7 @@ const {runDistributedCrawlAsync} = require('./coordinator.js');
 const {
   bootstrapDistributionRuntime,
   stopDistributionRuntime,
+  addNodeToGroup,
 } = require('./distributedRuntime.js');
 const {runDistributedIndexJobs} = require('./indexing/distributedIndexPipeline.js');
 const {closePostgresIfOpen} = require('./indexing/mrIndexRound.js');
@@ -96,13 +97,20 @@ function parseArgs() {
     queries: [...DEFAULT_QUERIES],
     crawlJobPrefix: 'aws_eval_crawl',
     includeDocStats: true,
+    nodes: /** @type {{ip:string, port:number}[] | null} */ (null),
   };
 
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--seeds-file' && argv[i + 1]) {
       out.seedsFile = path.resolve(process.cwd(), argv[++i]);
-    } else if (a === '--out-dir' && argv[i + 1]) {
+    } else if (a === '--nodes' && argv[i + 1]) {
+      out.nodes = argv[++i].split(',').map(s => {
+        const [ip, port] = s.split(':');
+        return {ip, port: parseInt(port, 10)};
+      });
+    }
+    else if (a === '--out-dir' && argv[i + 1]) {
       out.outDir = path.resolve(process.cwd(), argv[++i]);
     } else if (a === '--port' && argv[i + 1]) {
       out.port = parseInt(argv[++i], 10);
@@ -288,6 +296,12 @@ async function main() {
     gid: opts.gid,
     ip: bindIp,
   });
+
+  if (opts.nodes) {
+    for (const node of opts.nodes) {
+      await addNodeToGroup(node, opts.gid);
+    }
+  }
 
   console.error(
       `[run-aws-eval] listening ${globalThis.distribution.node.config.ip}:${opts.port} seeds=${seeds.length} LLM=${opts.allowLlmFallback ? 'allowed' : 'off'}`,
